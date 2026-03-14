@@ -1,7 +1,14 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-export default clerkMiddleware();
+// Simple middleware that allows all requests through
+// Authentication is handled by Clerk in the app itself
+export function middleware(request: NextRequest) {
+  // Allow all requests to proceed
+  return NextResponse.next();
+}
 
 export const config = {
-  matcher: ["/((?!.*\\..*|_next/static|_next/image|favicon.ico).*)", "/", "/(api|trpc)(.*)"],
+  // Match all paths except static files
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
