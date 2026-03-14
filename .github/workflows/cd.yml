@@ -26,7 +26,7 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         
       - name: Check for required files
         run: |
@@ -51,7 +51,7 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         
       - name: Deploy to Vercel (Preview)
         uses: amondnet/vercel-action@v25
@@ -74,7 +74,7 @@ jobs:
     
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         
       - name: Deploy to Vercel (Production)
         uses: amondnet/vercel-action@v25
