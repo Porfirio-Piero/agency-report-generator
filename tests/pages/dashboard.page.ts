@@ -6,8 +6,8 @@ export class DashboardPage {
   readonly heading: Locator;
   readonly activeClientsStat: Locator;
   readonly reportsThisWeekStat: Locator;
-  constimeSavedStat: Locator;
-  const deliveredStat: Locator;
+  readonly timeSavedStat: Locator;
+  readonly deliveredStat: Locator;
   readonly recentReportsTable: Locator;
   readonly addClientButton: Locator;
   readonly generateReportButton: Locator;
