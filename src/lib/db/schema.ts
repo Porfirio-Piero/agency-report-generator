@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // Users table (managed by Clerk)
@@ -40,7 +40,7 @@ export const clients = pgTable("clients", {
 export const platformConnections = pgTable("platform_connections", {
   id: uuid("id").primaryKey().defaultRandom(),
   clientId: uuid("client_id").references(() => clients.id).notNull(),
-  platform: text("platform").notNull(), // 'google_analytics', 'facebook_ads', 'linkedin_ads'
+  platform: text("platform").notNull(),
   accessToken: text("access_token").notNull(),
   refreshToken: text("refresh_token"),
   platformAccountId: text("platform_account_id"),
@@ -58,7 +58,7 @@ export const reports = pgTable("reports", {
   weekEnd: timestamp("week_end").notNull(),
   pdfUrl: text("pdf_url"),
   sentAt: timestamp("sent_at"),
-  status: text("status").default("pending"), // 'pending', 'generated', 'sent', 'failed'
+  status: text("status").default("pending"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -84,18 +84,25 @@ export const usersRelations = relations(users, ({ many }) => ({
   agencySettings: many(agencySettings),
 }));
 
+export const agencySettingsRelations = relations(agencySettings, ({ one }) => ({
+  user: one(users, {
+    fields: [agencySettings.userId],
+    references: [users.id],
+  }),
+}));
+
 export const clientsRelations = relations(clients, ({ many, one }) => ({
   connections: many(platformConnections),
   reports: many(reports),
   user: one(users, {
-    fields: [users.id],
+    fields: [clients.userId],
     references: [users.id],
   }),
 }));
 
 export const platformConnectionsRelations = relations(platformConnections, ({ one }) => ({
   client: one(clients, {
-    fields: [clients.id],
+    fields: [platformConnections.clientId],
     references: [clients.id],
   }),
 }));
@@ -103,14 +110,14 @@ export const platformConnectionsRelations = relations(platformConnections, ({ on
 export const reportsRelations = relations(reports, ({ many, one }) => ({
   metrics: many(reportMetrics),
   client: one(clients, {
-    fields: [clients.id],
+    fields: [reports.clientId],
     references: [clients.id],
   }),
 }));
 
 export const reportMetricsRelations = relations(reportMetrics, ({ one }) => ({
   report: one(reports, {
-    fields: [reports.id],
+    fields: [reportMetrics.reportId],
     references: [reports.id],
   }),
 }));
