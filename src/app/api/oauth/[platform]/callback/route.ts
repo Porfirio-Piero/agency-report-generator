@@ -1,8 +1,6 @@
-import { auth } from "@clerk/nextjs";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from "@/lib/db";
 import { platformConnections } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
 
 const oauthConfigs = {
   google_analytics: {
@@ -23,47 +21,32 @@ const oauthConfigs = {
 };
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { platform: string } }
 ) {
+  const platform = params.platform as keyof typeof oauthConfigs;
+  const config = oauthConfigs[platform];
+
+  if (!config) {
+    return NextResponse.redirect(
+      new URL("/clients?error=invalid_platform", request.url)
+    );
+  }
+
+  const { searchParams } = new URL(request.url);
+  const code = searchParams.get("code");
+  const state = searchParams.get("code");
+
+  if (!code) {
+    return NextResponse.redirect(
+      new URL("/clients?error=no_code", request.url)
+    );
+  }
+
+  // Exchange code for tokens
+  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/oauth/${platform}/callback`;
+  
   try {
-    const { userId } = auth();
-    if (!userId) {
-      return NextResponse.redirect(new URL("/sign-in", request.url));
-    }
-
-    const platform = params.platform as keyof typeof oauthConfigs;
-    const config = oauthConfigs[platform];
-
-    if (!config) {
-      return NextResponse.redirect(
-        new URL("/clients?error=invalid_platform", request.url)
-      );
-    }
-
-    const { searchParams } = new URL(request.url);
-    const code = searchParams.get("code");
-    const state = searchParams.get("state");
-
-    if (!code) {
-      return NextResponse.redirect(
-        new URL("/clients?error=no_code", request.url)
-      );
-    }
-
-    // Parse state
-    let stateData: { userId: string; clientId: string };
-    try {
-      stateData = JSON.parse(Buffer.from(state || "", "base64").toString());
-    } catch {
-      return NextResponse.redirect(
-        new URL("/clients?error=invalid_state", request.url)
-      );
-    }
-
-    // Exchange code for tokens
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/oauth/${platform}/callback`;
-    
     const tokenResponse = await fetch(config.tokenUrl, {
       method: "POST",
       headers: {
@@ -87,11 +70,19 @@ export async function GET(
 
     const tokenData = await tokenResponse.json();
 
+    // Parse state to get clientId
+    let stateData: { clientId: string };
+    try {
+      stateData = JSON.parse(Buffer.from(state || "", "base64").toString());
+    } catch {
+      stateData = { clientId: "" };
+    }
+
     // Store connection in database
     const [connection] = await db
       .insert(platformConnections)
       .values({
-        clientId: stateData.clientId,
+        clientId: stateData.clientId || "unknown",
         platform: platform,
         accessToken: tokenData.access_token,
         refreshToken: tokenData.refresh_token || null,

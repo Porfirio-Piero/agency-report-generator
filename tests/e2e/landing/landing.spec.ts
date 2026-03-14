@@ -11,9 +11,9 @@ test.describe('Landing Page', () => {
   test('displays call to action buttons', async ({ page }) => {
     await page.goto('/');
     
-    // Check for CTA buttons
-    await expect(page.getByRole('button', { name: /start free trial/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /watch demo/i })).toBeVisible();
+    // Check for CTA buttons - use .first() to handle multiple matches
+    await expect(page.getByRole('button', { name: /start free trial/i }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /watch demo/i }).first()).toBeVisible();
   });
 
   test('displays feature cards', async ({ page }) => {
@@ -32,26 +32,26 @@ test.describe('Landing Page', () => {
     // Scroll to pricing
     await page.getByText(/pricing/i).first().scrollIntoViewIfNeeded();
     
-    // Check for pricing tiers
-    await expect(page.getByText(/starter/i)).toBeVisible();
-    await expect(page.getByText(/agency/i)).toBeVisible();
-    await expect(page.getByText(/enterprise/i)).toBeVisible();
+    // Check for pricing tiers - use more specific selectors
+    await expect(page.getByRole('heading', { name: /starter/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^agency$/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /enterprise/i })).toBeVisible();
   });
 
   test('displays navigation', async ({ page }) => {
     await page.goto('/');
     
-    // Check for navigation
+    // Check for navigation links in the header section
     await expect(page.getByRole('link', { name: /features/i })).toBeVisible();
     await expect(page.getByRole('link', { name: /pricing/i })).toBeVisible();
     await expect(page.getByRole('link', { name: /testimonials/i })).toBeVisible();
   });
 
-  test('has sign in link', async ({ page }) => {
+  test('has login link', async ({ page }) => {
     await page.goto('/');
     
-    // Check for sign in link
-    await expect(page.getByRole('link', { name: /sign in/i })).toBeVisible();
+    // Check for login link in the navigation - the text is "Login" not "Sign In"
+    await expect(page.getByRole('link', { name: /login/i })).toBeVisible();
   });
 
   test('responsive design - mobile', async ({ page }) => {
@@ -62,7 +62,7 @@ test.describe('Landing Page', () => {
     // Check that hero is still visible
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     
-    // Check that CTA is visible
-    await expect(page.getByRole('button', { name: /start free trial/i })).toBeVisible();
+    // Check that CTA is visible - use .first()
+    await expect(page.getByRole('button', { name: /start free trial/i }).first()).toBeVisible();
   });
 });

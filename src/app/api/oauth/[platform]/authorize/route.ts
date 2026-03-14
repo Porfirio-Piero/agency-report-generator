@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
 
 // OAuth configuration for each platform
 const oauthConfigs = {
@@ -27,49 +27,34 @@ const oauthConfigs = {
 
 // GET /api/oauth/[platform]/authorize - Get OAuth authorization URL
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { platform: string } }
 ) {
-  try {
-    const { userId } = auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const platform = params.platform as keyof typeof oauthConfigs;
+  const config = oauthConfigs[platform];
 
-    const platform = params.platform as keyof typeof oauthConfigs;
-    const config = oauthConfigs[platform];
-
-    if (!config) {
-      return NextResponse.json(
-        { error: "Invalid platform" },
-        { status: 400 }
-      );
-    }
-
-    const { searchParams } = new URL(request.url);
-    const clientId = searchParams.get("clientId");
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/oauth/${platform}/callback`;
-
-    // Generate state for CSRF protection
-    const state = Buffer.from(
-      JSON.stringify({ userId, clientId })
-    ).toString("base64");
-
-    const authUrl = new URL(config.authorizeUrl);
-    authUrl.searchParams.set("client_id", config.clientId!);
-    authUrl.searchParams.set("redirect_uri", redirectUri);
-    authUrl.searchParams.set("scope", config.scope);
-    authUrl.searchParams.set("response_type", "code");
-    authUrl.searchParams.set("state", state);
-
-    return NextResponse.json({ authUrl: authUrl.toString() });
-  } catch (error) {
-    console.error("Error generating auth URL:", error);
+  if (!config) {
     return NextResponse.json(
-      { error: "Failed to generate authorization URL" },
-      { status: 500 }
+      { error: "Invalid platform" },
+      { status: 400 }
     );
   }
-}
 
-import { auth } from "@clerk/nextjs";
+  const { searchParams } = new URL(request.url);
+  const clientId = searchParams.get("clientId");
+  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/oauth/${platform}/callback`;
+
+  // Generate state for CSRF protection
+  const state = Buffer.from(
+    JSON.stringify({ clientId })
+  ).toString("base64");
+
+  const authUrl = new URL(config.authorizeUrl);
+  authUrl.searchParams.set("client_id", config.clientId!);
+  authUrl.searchParams.set("redirect_uri", redirectUri);
+  authUrl.searchParams.set("scope", config.scope);
+  authUrl.searchParams.set("response_type", "code");
+  authUrl.searchParams.set("state", state);
+
+  return NextResponse.json({ authUrl: authUrl.toString() });
+}
