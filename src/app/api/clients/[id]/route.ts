@@ -4,20 +4,25 @@ import { db } from "@/lib/db";
 import { clients } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 
-type Params = { params: { id: string } };
+type Params = Promise<{ id: string }>;
 
 // GET /api/clients/[id] - Get a specific client
-export async function GET(request: Request, { params }: Params) {
+export async function GET(
+  request: Request,
+  { params }: { params: Params }
+) {
   try {
     const { userId } = auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { id } = await params;
+
     const [client] = await db
       .select()
       .from(clients)
-      .where(and(eq(clients.id, params.id), eq(clients.userId, userId)));
+      .where(and(eq(clients.id, id), eq(clients.userId, userId)));
 
     if (!client) {
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
@@ -34,13 +39,17 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 // PUT /api/clients/[id] - Update a client
-export async function PUT(request: Request, { params }: Params) {
+export async function PUT(
+  request: Request,
+  { params }: { params: Params }
+) {
   try {
     const { userId } = auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { id } = await params;
     const body = await request.json();
     const { name, email, company, notes } = body;
 
@@ -53,7 +62,7 @@ export async function PUT(request: Request, { params }: Params) {
         notes: notes,
         updatedAt: new Date(),
       })
-      .where(and(eq(clients.id, params.id), eq(clients.userId, userId)))
+      .where(and(eq(clients.id, id), eq(clients.userId, userId)))
       .returning();
 
     if (!updatedClient) {
@@ -71,16 +80,21 @@ export async function PUT(request: Request, { params }: Params) {
 }
 
 // DELETE /api/clients/[id] - Delete a client
-export async function DELETE(request: Request, { params }: Params) {
+export async function DELETE(
+  request: Request,
+  { params }: { params: Params }
+) {
   try {
     const { userId } = auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { id } = await params;
+
     const [deletedClient] = await db
       .delete(clients)
-      .where(and(eq(clients.id, params.id), eq(clients.userId, userId)))
+      .where(and(eq(clients.id, id), eq(clients.userId, userId)))
       .returning();
 
     if (!deletedClient) {

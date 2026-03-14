@@ -20,12 +20,14 @@ const oauthConfigs = {
   },
 };
 
+type Params = Promise<{ platform: string }>;
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { platform: string } }
+  { params }: { params: Params }
 ) {
-  const platform = params.platform as keyof typeof oauthConfigs;
-  const config = oauthConfigs[platform];
+  const { platform } = await params;
+  const config = oauthConfigs[platform as keyof typeof oauthConfigs];
 
   if (!config) {
     return NextResponse.redirect(
@@ -35,7 +37,7 @@ export async function GET(
 
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const state = searchParams.get("code");
+  const state = searchParams.get("state");
 
   if (!code) {
     return NextResponse.redirect(
